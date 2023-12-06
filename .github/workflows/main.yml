@@ -1,19 +1,41 @@
-name: GitlabSync
+name: Merge upstream repo and Gitlab Sync
 
 on:
-  - push
-  - delete
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Merge upstream
+        run: |
+          git config --global user.name ${{ secrets.USER }}"
+          git config --global user.email ${{ secrets.EMAIL }}
+
+          git pull --unshallow 
+          git remote add upstream ${{ secrets.SOURCE_REPO_URL }}
+          git fetch upstream
+
+          git checkout main
+          git merge --no-edit upstream/main
+          git push origin main
+
   sync:
     runs-on: ubuntu-latest
     name: Git Repo Sync
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - uses: wangchucheng/git-repo-sync@v0.1.0
-      with:
-        target-url: ${{ secrets.TARGET_SYNC_URL }}
-        target-username: ${{ secrets.TARGET_SYNC_USERNAME }}
-        target-token: ${{ secrets.TARGET_SYNC_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Git Repo Sync
+        uses: wangchucheng/git-repo-sync@v0.1.0
+        with:
+          target-url: ${{ secrets.TARGET_REPO_URL }}
+          target-username: ${{ secrets.TARGET_REPO_USERNAME }}
+          target-token: ${{ secrets.TARGET_REPO_TOKEN }}
